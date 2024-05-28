@@ -30,6 +30,7 @@ ARG KAFKA_SHA512_DOWNLOAD_URL="https://archive.apache.org/dist/kafka/${KAFKA_VER
 # 1) https://github.com/googleapis/java-pubsub-group-kafka-connector/releases/
 # 2) https://central.sonatype.com/artifact/com.google.cloud/pubsub-group-kafka-connector
 ARG PUBSUB_GROUP_KAFKA_CONNECTOR_JAR="pubsub-group-kafka-connector-${PUBSUB_GROUP_KAFKA_CONNECTOR_VERSION}.jar"
+ARG PUBSUB_GROUP_KAFKA_CONNECTOR_URL="https://repo1.maven.org/maven2/com/google/cloud/pubsub-group-kafka-connector/${PUBSUB_GROUP_KAFKA_CONNECTOR_VERSION}/${PUBSUB_GROUP_KAFKA_CONNECTOR_JAR}"
 ARG KAFKA_CONNECT_CONFIGURE_SCRIPT="configure-kafka-connect.sh"
 ARG BUILD_KAFKA_CONNECT_STARTUP_SCRIPT="start-kafka-connect.sh"
 ARG BUILD_KAFKA_CONNECT_CONFIG_FILE="kafka-connect.properties"
@@ -48,16 +49,16 @@ RUN apt-get -y -qq update \
     && gpg --print-md SHA512 ${KAFKA_TARBALL} | diff - ${KAFKA_TARBALL}.sha512 \
     && tar -xzf ${KAFKA_TARBALL} -C ${KAFKA_HOME_ROOT} \
     && ln -s ${KAFKA_HOME_ROOT}/${KAFKA_RELEASE} ${KAFKA_HOME} \
-    && mkdir -p ${KAFKA_PLUGINS_DIR} \
     && rm -f ${KAFKA_TARBALL} \
     && rm -f ${KAFKA_TARBALL}.sha512 \
+    && wget -q ${PUBSUB_GROUP_KAFKA_CONNECTOR_URL} \
+    && mkdir -p ${KAFKA_PLUGINS_DIR} \
+    && mv ${PUBSUB_GROUP_KAFKA_CONNECTOR_JAR} ${KAFKA_PLUGINS_DIR}/${PUBSUB_GROUP_KAFKA_CONNECTOR_JAR}
     && apt-get -y -qq remove --purge gpg \
     && apt-get -y -qq autoremove \
     && apt-get -y clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY ${PUBSUB_GROUP_KAFKA_CONNECTOR_JAR} \
-${KAFKA_PLUGINS_DIR}/${PUBSUB_GROUP_KAFKA_CONNECTOR_JAR}
 COPY ${BUILD_KAFKA_CONNECT_CONFIG_FILE} ${KAFKA_CONNECT_CONFIG_FILE}
 COPY --chmod=555 ${KAFKA_CONNECT_CONFIGURE_SCRIPT} .
 COPY --chmod=555 ${BUILD_KAFKA_CONNECT_STARTUP_SCRIPT} ${KAFKA_CONNECT_STARTUP_SCRIPT}
